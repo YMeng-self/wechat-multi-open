@@ -40,9 +40,10 @@ def create_icon():
 icon_path = create_icon()
 
 # 定义打包参数
+app_name = "wechat-multi-open-20050609-windows-x64"
 PyInstaller.__main__.run([
-    'wechat_multi_open_web.py',
-    '--name=wechat-multi-open',
+    'wechat_multi_open.py',
+    f'--name={app_name}',
     '--onefile',
     '--windowed',
     '--add-data=uploads;uploads',
