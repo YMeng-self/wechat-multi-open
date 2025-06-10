@@ -28,3 +28,14 @@
 - 使用Python Flask框架开发
 - 使用PyInstaller打包成单个exe文件
 - 支持Windows系统 
+
+## 本地调试
+
+```bash
+# 安装依赖
+pip install -r requirements.txt -r https://mirrors.aliyun.com/pypi/simple
+
+# 运行程序
+python wechat_multi_open.py
+```
+

@@ -1,20 +1,14 @@
-from flask import Flask, render_template_string, request, send_from_directory
+from flask import Flask, render_template_string, request
 import os
 import subprocess
 import sys
 import json
-import webbrowser
 import threading
-import time
-import pystray
-from PIL import Image, ImageDraw
-
-# PyWebView入口点
+from pystray import Icon, Menu, MenuItem
+from PIL import Image
 import webview
-import uvicorn
-import threading
 
-
+# falsk app
 app = Flask(__name__)
 
 # 配置文件路径
@@ -54,44 +48,46 @@ def get_default_wechat_path():
             return path
     return ""
 
-def create_icon():
+
+# 全局变量，用于控制托盘图标
+tray_icon = None
+
+
+# def on_window_closed(window):
+#     """点击 X 按钮时隐藏窗口（而不是关闭）"""
+#     window.hide()
+#     return False  # 阻止默认关闭行为
+
+def on_tray_click(icon, item, window):
+    """点击托盘图标时恢复窗口"""
+    window.show()
+    window.restore()  # 如果窗口最小化，恢复它
+
+
+def create_tray_icon(window):
     """创建系统托盘图标"""
-    # 创建一个简单的图标
-    img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    
-    # 绘制背景圆
-    draw.ellipse([(4, 4), (60, 60)], fill=(52, 152, 219, 255))
-    
-    # 绘制微信图标
-    # 绘制外圈
-    draw.ellipse([(16, 16), (48, 48)], fill=(255, 255, 255, 255))
-    # 绘制内圈
-    draw.ellipse([(20, 20), (44, 44)], fill=(52, 152, 219, 255))
-    # 绘制两个小圆
-    draw.ellipse([(24, 24), (28, 28)], fill=(255, 255, 255, 255))
-    draw.ellipse([(36, 24), (40, 28)], fill=(255, 255, 255, 255))
-    # 绘制笑脸
-    draw.arc([(24, 32), (40, 40)], 0, 180, fill=(255, 255, 255, 255), width=2)
-    
-    return img
+    global tray_icon
 
-def on_quit(icon):
-    """退出程序"""
-    icon.stop()
-    os._exit(0)
+    # 1. 加载图标（可以是 .ico 或 .png）
+    try:
+        image = Image.open("icon/wechat.ico")  # 替换为你的图标路径
+    except FileNotFoundError:
+        # 如果没有图标，创建一个默认的
+        image = Image.new('RGB', (64, 64), color='blue')
 
-def setup_tray():
-    """设置系统托盘"""
-    icon = pystray.Icon("wechat_multi_open")
-    icon.icon = create_icon()
-    icon.title = "微信多开工具"
-    icon.menu = pystray.Menu(
-        pystray.MenuItem("打开网页", lambda: webbrowser.open('http://127.0.0.1:5000')),
-        pystray.MenuItem("退出", on_quit)
+    # 2. 定义托盘菜单
+    menu = Menu(
+        MenuItem("显示", lambda: window.show()),
+        MenuItem("隐藏", lambda: window.hide()),
+        MenuItem("退出", lambda: (tray_icon.stop(), window.destroy())),
     )
-    icon.run()
 
+    # 3. 创建托盘图标
+    tray_icon = Icon("my_app", image, "我的应用", menu)
+    tray_icon.run()
+
+
+# 全局变量，HTML页面模板
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -284,40 +280,56 @@ def start_wechat():
         return "启动微信失败: {}".format(str(e))
 
 
-def open_browser():
-    """延迟1秒后打开浏览器"""
-    time.sleep(1)
-    webbrowser.open('http://127.0.0.1:5000')
-
-
 def run_server():
+    """运行WEB服务器"""
     app.run(debug=False, host='127.0.0.1', port=5000)
 
 
 def create_window():
-    # 创建PyWebView窗口
+    """创建PyWebView窗口"""
     window = webview.create_window(
+        # title='微信多开工具',
         title='',
-        url='http://127.0.0.1:5000/',
+        # url='http://127.0.0.1:5000/',
+        url=app, 
         width=900,
         height=600,
+        # icon='icon/wechat.ico',
+        # gui='cef'
         resizable=True,
-        fullscreen=False,
+        confirm_close=False,
+        # fullscreen=False,
         # local_api=True,
     )
     return window
 
 
-if __name__ == "__main__":
-    # 创建线程来打开浏览器
-    # threading.Thread(target=open_browser).start()
-    # 创建线程来运行系统托盘
-    # threading.Thread(target=setup_tray, daemon=True).start()
-    # 启动Flask应用
-    # app.run(debug=False, host='127.0.0.1', port=5000)
+def main():
+    # 1. 创建 WebView 窗口
+    window = create_window()
 
-    t = threading.Thread(target=run_server, daemon=True)
-    t.start()
-    # 调用函数创建窗口，而不是直接调用 webview.start() 函数
-    window = create_window()  
-    webview.start(window, http_server=True, http_port=8080)
+    # 2. 绑定窗口关闭事件（点击 X 时隐藏到托盘）
+    # window.events.closed += lambda: on_window_closed(window)
+
+    # 3. 在后台线程运行托盘图标
+    tray_thread = threading.Thread(
+        target=create_tray_icon,
+        args=(window,),
+        daemon=True,
+    )
+    tray_thread.start()
+
+    # web_thread = threading.Thread(target=run_server, daemon=True)
+    # web_thread.start()
+
+    # 4. 启动 WebView
+    webview.start()
+
+
+if __name__ == "__main__":
+    main()
+    # t = threading.Thread(target=run_server, daemon=True)
+    # t.start()
+    # # 调用函数创建窗口，而不是直接调用 webview.start() 函数
+    # window = create_window()  
+    # webview.start(window, http_server=True, http_port=8080)
