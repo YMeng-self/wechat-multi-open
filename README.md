@@ -33,7 +33,7 @@
 
 ```bash
 # 安装依赖
-pip install -r requirements.txt -r https://mirrors.aliyun.com/pypi/simple
+pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple
 
 # 运行程序
 python wechat_multi_open.py
