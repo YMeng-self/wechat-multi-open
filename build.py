@@ -12,12 +12,14 @@ if not os.path.exists(uploads_dir):
     os.makedirs(uploads_dir)
 
 # 创建图标
-try:
-    # 替换为你的图标路径
-    icon_path = Image.open("icon/wechat.ico")  
-except FileNotFoundError:
-    # 如果没有图标，创建一个默认的
-    icon_path = Image.new('RGB', (64, 64), color='blue')
+# try:
+#     # 替换为你的图标路径
+#     icon_path = Image.open("icon/wechat.ico")  
+# except FileNotFoundError:
+#     # 如果没有图标，创建一个默认的
+#     icon_path = Image.new('RGB', (64, 64), color='blue')
+
+icon_path = "icon/wechat.ico"
 
 # 定义打包参数
 app_name = "wechat-multi-open"
@@ -44,5 +46,5 @@ if os.path.exists(dist_dir):
         shutil.copy2(config_file, dist_dir)
     
     # 删除临时图标文件
-    if os.path.exists(icon_path):
-        os.remove(icon_path) 
+    # if os.path.exists(icon_path):
+    #     os.remove(icon_path) 
