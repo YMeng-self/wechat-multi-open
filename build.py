@@ -1,50 +1,60 @@
+# build.py
 import PyInstaller.__main__
 import os
-import shutil
-from PIL import Image
+import sys
 
-# 获取当前目录
-current_dir = os.path.dirname(os.path.abspath(__file__))
+def get_resource_path(relative_path):
+    """获取资源的绝对路径"""
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
-# 确保uploads目录存在
-uploads_dir = os.path.join(current_dir, 'uploads')
-if not os.path.exists(uploads_dir):
-    os.makedirs(uploads_dir)
+# 确保data目录存在
+if not os.path.exists('data'):
+    os.makedirs('data')
 
-# 创建图标
-# try:
-#     # 替换为你的图标路径
-#     icon_path = Image.open("icon/wechat.ico")  
-# except FileNotFoundError:
-#     # 如果没有图标，创建一个默认的
-#     icon_path = Image.new('RGB', (64, 64), color='blue')
-
-icon_path = "icon/wechat.ico"
-
-# 定义打包参数
 app_name = "wechat-multi-open"
-PyInstaller.__main__.run([
-    'wechat_multi_open.py',
+icon_path = "data/wechat.ico" if os.path.exists("data/wechat.ico") else None
+
+pack_cmd = [
+    'main.py',
     f'--name={app_name}',
     '--onefile',
     '--windowed',
-    '--add-data=uploads;uploads',
-    '--add-data=wechat_config.json;.',
-    f'--icon={icon_path}',
+    '--noconsole',
+    
+    # 添加数据文件
+    '--add-data=data;data',
+    '--add-data=data/wechat.ico;data' if icon_path else '',
+    
+    # 必须的隐藏导入
+    '--hidden-import=webview',
+    '--hidden-import=flask',
     '--hidden-import=pystray',
     '--hidden-import=PIL',
     '--hidden-import=PIL._tkinter_finder',
-    '--clean',
-    '--noconfirm'
-])
-
-# 复制配置文件到dist目录
-dist_dir = os.path.join(current_dir, 'dist')
-if os.path.exists(dist_dir):
-    config_file = os.path.join(current_dir, 'wechat_config.json')
-    if os.path.exists(config_file):
-        shutil.copy2(config_file, dist_dir)
+    '--hidden-import=jinja2',
+    '--hidden-import=werkzeug',
+    '--hidden-import=pywin32',
     
-    # 删除临时图标文件
-    # if os.path.exists(icon_path):
-    #     os.remove(icon_path) 
+    # WebView特殊处理
+    '--collect-all=webview',
+    
+    # 清理和优化
+    '--clean',
+    '--noconfirm',
+    
+    # 防止临时文件问题
+    '--runtime-tmpdir=.'
+]
+
+# 添加图标（如果存在）
+if icon_path:
+    pack_cmd.append(f'--icon={icon_path}')
+
+# 移除空参数
+pack_cmd = [x for x in pack_cmd if x]
+
+PyInstaller.__main__.run(pack_cmd)
