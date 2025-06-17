@@ -19,7 +19,8 @@
 6. 用不同的微信账号进行扫描即可实现登录多个微信！
 
 
-![img](./images/img_20250617102136.png)
+<!-- 固定宽度缩小 -->
+<img src="./images/img_20250617102136.png" style="width: 30%; height: auto;">
 
 
 ## 注意事项
