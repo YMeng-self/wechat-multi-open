@@ -15,7 +15,7 @@ def get_resource_path(relative_path):
 if not os.path.exists('data'):
     os.makedirs('data')
 
-app_name = "wechat-multi-open"
+app_name = "WeMulti"
 icon_path = "data/wechat.ico" if os.path.exists("data/wechat.ico") else None
 
 pack_cmd = [
